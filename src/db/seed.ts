@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { getPool, closePool } from "./pool.js";
+import { getPool, closePool } from "./order.repository.js";
 
 const seeds = [
   { id: "1001", status: "processing", productId: 1 },

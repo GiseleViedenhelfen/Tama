@@ -1,5 +1,33 @@
+import pg from "pg";
 import type { Order, OrderStatus } from "../shared/order.types.js";
-import { getPool } from "./pool.js";
+
+const { Pool } = pg;
+
+let pool: pg.Pool | null = null;
+
+function connectionString(): string {
+  const url = process.env.DATABASE_URL?.trim();
+  if (!url) {
+    throw new Error(
+      "DATABASE_URL is not set (Docker Compose builds it for the API; see README for migrate/dev).",
+    );
+  }
+  return url;
+}
+
+export function getPool(): pg.Pool {
+  if (!pool) {
+    pool = new Pool({ connectionString: connectionString() });
+  }
+  return pool;
+}
+
+export async function closePool(): Promise<void> {
+  if (pool) {
+    await pool.end();
+    pool = null;
+  }
+}
 
 function mapRow(row: {
   id: string;
