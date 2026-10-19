@@ -1,0 +1,49 @@
+# Interpolation uses the project `.env` file (not committed).
+# DATABASE_URL for the API is assembled here — not stored as its own .env entry.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\"",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
+      PORT: ${PORT}
+      LOG_LEVEL: ${LOG_LEVEL}
+      FAKESTORE_BASE_URL: ${FAKESTORE_BASE_URL}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  db-setup:
+    build: .
+    profiles: ["tools"]
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
+    command: ["sh", "-c", "node dist/db/migrate.js && node dist/db/seed.js"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
