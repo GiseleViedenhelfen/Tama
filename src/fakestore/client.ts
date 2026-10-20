@@ -19,12 +19,16 @@ export class FakeStoreClient {
         signal: AbortSignal.timeout(8000),
       });
       const durationMs = Date.now() - started;
-      logDomainEvent("external.fakestore.fetch", {
-        productId: id,
-        httpStatus: res.status,
-        durationMs,
-        ok: res.ok,
-      });
+      logDomainEvent(
+        "external.fakestore.fetch",
+        {
+          productId: id,
+          httpStatus: res.status,
+          durationMs,
+          ok: res.ok,
+        },
+        "debug",
+      );
 
       if (!res.ok) return null;
       const text = await res.text();
@@ -34,11 +38,15 @@ export class FakeStoreClient {
       if (typeof data.id !== "number") return null;
       return data;
     } catch (err) {
-      logDomainEvent("external.fakestore.error", {
-        productId: id,
-        durationMs: Date.now() - started,
-        error: err instanceof Error ? err.message : "unknown",
-      });
+      logDomainEvent(
+        "external.fakestore.error",
+        {
+          productId: id,
+          durationMs: Date.now() - started,
+          error: err instanceof Error ? err.message : "unknown",
+        },
+        "debug",
+      );
       return null;
     }
   }
