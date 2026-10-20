@@ -29,7 +29,7 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT:-5432}/${POSTGRES_DB}
       PORT: ${PORT}
-      LOG_LEVEL: ${LOG_LEVEL}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       FAKESTORE_BASE_URL: ${FAKESTORE_BASE_URL}
     depends_on:
       postgres:
