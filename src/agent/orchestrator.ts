@@ -11,6 +11,8 @@ import {
   cancelDeclinedReply,
   cancelSuccessReply,
   confirmCancelPrompt,
+  contextReminderReply,
+  deliveryEtaReply,
   greetingReply,
   notCancellableReply,
   orderNotFoundReply,
@@ -23,11 +25,27 @@ import type { AgentTurnResult, SessionState } from "./types.js";
 const YES = /^(sim|s|yes|y|confirmo|confirmar)$/i;
 const NO = /^(não|nao|n|no)$/i;
 const ORDER_ID = /\b(\d{3,})\b/;
+const DELIVERY_QUESTION =
+  /chega quando|quando chega|prazo de entrega|data de entrega|vai chegar|previs[aã]o|demora quanto/i;
+const CONTEXT_FRUSTRATION =
+  /j[aá] (te )?(falei|disse)|eu disse|mesmo pedido|j[aá] informei/i;
 
 function extractOrderId(text: string, fromLlm: string | null): string | null {
   if (fromLlm?.trim()) return fromLlm.trim();
   const match = text.match(ORDER_ID);
   return match ? match[1] : null;
+}
+
+function resolveOrderId(
+  text: string,
+  fromLlm: string | null,
+  session: SessionState,
+): string | null {
+  return extractOrderId(text, fromLlm) ?? session.lastOrderId;
+}
+
+function rememberOrder(session: SessionState, orderId: string): void {
+  session.lastOrderId = orderId;
 }
 
 function isYes(text: string): boolean {
@@ -58,7 +76,20 @@ export class AgentOrchestrator {
       return this.handlePendingConfirmation(trimmed, session);
     }
 
-    const classification = await this.classifier.classify(trimmed);
+    if (DELIVERY_QUESTION.test(trimmed) && session.lastOrderId) {
+      return this.handleDeliveryQuestion(session.lastOrderId);
+    }
+
+    if (CONTEXT_FRUSTRATION.test(trimmed) && session.lastOrderId) {
+      return {
+        reply: contextReminderReply(session.lastOrderId),
+        handoff: false,
+      };
+    }
+
+    const classification = await this.classifier.classify(trimmed, {
+      lastOrderId: session.lastOrderId,
+    });
 
     if (classification.scope === "unsafe") {
       return { reply: REFUSAL_UNSAFE, handoff: true };
@@ -67,7 +98,7 @@ export class AgentOrchestrator {
       return { reply: REFUSAL_OUT_OF_SCOPE, handoff: false };
     }
 
-    const orderId = extractOrderId(trimmed, classification.orderId);
+    const orderId = resolveOrderId(trimmed, classification.orderId, session);
 
     switch (classification.intent) {
       case "human_handoff":
@@ -77,16 +108,24 @@ export class AgentOrchestrator {
       case "confirm_yes":
       case "confirm_no":
         return {
-          reply: "Não há cancelamento pendente. Quer consultar um pedido?",
+          reply: session.lastOrderId
+            ? contextReminderReply(session.lastOrderId)
+            : "Não há cancelamento pendente. Qual é o número do pedido?",
           handoff: false,
         };
       case "order_status":
-        return this.handleOrderStatus(orderId);
+        if (DELIVERY_QUESTION.test(trimmed) && orderId) {
+          return this.handleDeliveryQuestion(orderId);
+        }
+        return this.handleOrderStatus(orderId, session);
       case "cancel_request":
         return this.handleCancelRequest(orderId, session);
       case "product_info":
-        return this.handleProductInfo(orderId);
+        return this.handleProductInfo(orderId, session);
       default:
+        if (orderId) {
+          return this.handleOrderStatus(orderId, session);
+        }
         return {
           reply:
             "Posso ajudar com status ou cancelamento de pedido. Qual é o número do pedido?",
@@ -105,6 +144,7 @@ export class AgentOrchestrator {
       try {
         const result = await this.api.cancelOrder(pending.orderId);
         if (result.success && result.code === "CANCELLATION_SUCCESS") {
+          rememberOrder(session, pending.orderId);
           return {
             reply: cancelSuccessReply(pending.orderId),
             handoff: false,
@@ -133,6 +173,7 @@ export class AgentOrchestrator {
 
     if (isNo(message)) {
       session.pendingConfirmation = null;
+      rememberOrder(session, pending.orderId);
       return {
         reply: cancelDeclinedReply(pending.orderId),
         handoff: false,
@@ -145,8 +186,29 @@ export class AgentOrchestrator {
     };
   }
 
+  private async handleDeliveryQuestion(
+    orderId: string,
+  ): Promise<AgentTurnResult> {
+    try {
+      const result = await this.api.getOrder(orderId);
+      if (result.success && result.data) {
+        return {
+          reply: deliveryEtaReply(orderId, result.data.status),
+          handoff: true,
+        };
+      }
+      if (result.code === "ORDER_NOT_FOUND") {
+        return { reply: orderNotFoundReply(orderId), handoff: false };
+      }
+      return { reply: apiFailureReply(), handoff: true };
+    } catch {
+      return { reply: apiFailureReply(), handoff: true };
+    }
+  }
+
   private async handleOrderStatus(
     orderId: string | null,
+    session: SessionState,
   ): Promise<AgentTurnResult> {
     if (!orderId) {
       return { reply: ASK_ORDER_ID, handoff: false };
@@ -154,6 +216,7 @@ export class AgentOrchestrator {
     try {
       const result = await this.api.getOrder(orderId);
       if (result.success && result.data) {
+        rememberOrder(session, orderId);
         return {
           reply: orderStatusReply(orderId, result.data.status),
           handoff: false,
@@ -184,6 +247,8 @@ export class AgentOrchestrator {
         return { reply: apiFailureReply(), handoff: true };
       }
 
+      rememberOrder(session, orderId);
+
       if (result.data.status !== "processing") {
         return {
           reply: notCancellableReply(orderId, result.data.status),
@@ -200,6 +265,7 @@ export class AgentOrchestrator {
 
   private async handleProductInfo(
     orderId: string | null,
+    session: SessionState,
   ): Promise<AgentTurnResult> {
     if (!orderId) {
       return { reply: ASK_ORDER_ID, handoff: false };
@@ -212,6 +278,8 @@ export class AgentOrchestrator {
         }
         return { reply: apiFailureReply(), handoff: true };
       }
+
+      rememberOrder(session, orderId);
 
       let reply = orderStatusReply(orderId, result.data.status);
       const productId = result.data.productId;

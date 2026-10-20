@@ -24,6 +24,8 @@ export interface PendingConfirmation {
 
 export interface SessionState {
   pendingConfirmation: PendingConfirmation | null;
+  /** Last order id successfully used in this CLI session */
+  lastOrderId: string | null;
 }
 
 export interface AgentTurnResult {

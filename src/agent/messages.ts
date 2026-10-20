@@ -12,7 +12,7 @@ export function statusLabel(status: OrderStatus): string {
 }
 
 export const REFUSAL_OUT_OF_SCOPE =
-  "Não consigo ajudar com isso daqui — sou a Tama, assistente de pedidos da loja. Posso consultar status ou orientar cancelamento (quando permitido). Quer falar de algum pedido?";
+  "Não consigo ajudar com isso daqui — sou a Tama, assistente de pedidos da loja. Posso consultar status ou orientar cancelamento, quando as regras permitirem. Quer falar de algum pedido?";
 
 export const REFUSAL_UNSAFE =
   "Por segurança, não posso seguir essa instrução. Posso ajudar com seu pedido ou encaminhar você para um atendente humano.";
@@ -52,13 +52,21 @@ export function apiFailureReply(): string {
 }
 
 export function greetingReply(): string {
-  return "Olá! Sou a Tama. Posso consultar status de pedido ou orientar cancelamento (se ainda estiver em processamento). Me informe o número do pedido.";
+  return "Olá! Sou a Tama. Posso consultar status de pedido ou orientar cancelamento se ainda estiver em processamento. Me informe o número do pedido.";
 }
 
 export function productComplement(title: string, price: number): string {
-  return `Sobre o item: ${title} (referência de catálogo R$ ${price.toFixed(2)}).`;
+  return `Sobre o item: ${title}. Referência de catálogo: R$ ${price.toFixed(2)}.`;
 }
 
 export function productUnavailableNote(): string {
   return "No momento não consegui carregar os detalhes do produto no catálogo.";
+}
+
+export function deliveryEtaReply(orderId: string, status: OrderStatus): string {
+  return `No pedido ${orderId} eu só tenho o status oficial: ${statusLabel(status)}. Não tenho previsão de entrega aqui — para prazo de chegada, fale com o suporte humano da loja.`;
+}
+
+export function contextReminderReply(orderId: string): string {
+  return `Certo, continuamos no pedido ${orderId}. Posso informar status, falar do item ou orientar cancelamento se ainda estiver em processamento.`;
 }
