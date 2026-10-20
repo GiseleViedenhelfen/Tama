@@ -7,7 +7,7 @@ import { getPool, closePool } from "./order.repository.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const migrationsDir = join(__dirname, "../../migrations");
 
-async function migrate(): Promise<void> {
+export async function applyMigrations(): Promise<void> {
   const pool = getPool();
   await pool.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -43,9 +43,17 @@ async function migrate(): Promise<void> {
   }
 }
 
-migrate()
-  .then(() => closePool())
-  .catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
+async function migrate(): Promise<void> {
+  await applyMigrations();
+}
+
+const isMain = process.argv[1] === fileURLToPath(import.meta.url);
+
+if (isMain) {
+  migrate()
+    .then(() => closePool())
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+}

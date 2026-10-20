@@ -1,16 +1,17 @@
+import { fileURLToPath } from "node:url";
 import "dotenv/config";
 import { getPool, closePool } from "./order.repository.js";
 
-const seeds = [
+export const orderSeeds = [
   { id: "1001", status: "processing", productId: 1 },
   { id: "1002", status: "shipped", productId: 2 },
   { id: "1003", status: "delivered", productId: 3 },
   { id: "1004", status: "cancelled", productId: 4 },
 ] as const;
 
-async function seed(): Promise<void> {
+export async function seedOrders(): Promise<void> {
   const pool = getPool();
-  for (const row of seeds) {
+  for (const row of orderSeeds) {
     await pool.query(
       `
       INSERT INTO orders (id, status, product_id)
@@ -23,12 +24,20 @@ async function seed(): Promise<void> {
       [row.id, row.status, row.productId],
     );
   }
-  console.log(`Seeded ${seeds.length} orders`);
+  console.log(`Seeded ${orderSeeds.length} orders`);
 }
 
-seed()
-  .then(() => closePool())
-  .catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
+async function seed(): Promise<void> {
+  await seedOrders();
+}
+
+const isMain = process.argv[1] === fileURLToPath(import.meta.url);
+
+if (isMain) {
+  seed()
+    .then(() => closePool())
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+}
