@@ -1,12 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import * as repo from "../src/db/order.repository.js";
-import * as orderService from "../src/api/services/order.service.js";
+import * as repo from "../../src/db/order.repository.js";
+import * as orderService from "../../src/api/services/order.service.js";
 
-vi.mock("../src/db/order.repository.js");
+vi.mock("../../src/db/order.repository.js");
 
 describe("orderService", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+  });
+
+  it("returns validation error for blank order id", async () => {
+    const result = await orderService.getOrder("   ");
+    expect(result.code).toBe("VALIDATION_ERROR");
+    expect(repo.findOrderById).not.toHaveBeenCalled();
   });
 
   it("returns not found for missing order", async () => {
@@ -49,5 +55,19 @@ describe("orderService", () => {
     const result = await orderService.cancelOrder("1002");
     expect(result.success).toBe(false);
     expect(result.code).toBe("ORDER_NOT_CANCELLABLE");
+  });
+
+  it("returns success without update when order already cancelled", async () => {
+    vi.mocked(repo.findOrderById).mockResolvedValue({
+      id: "1004",
+      status: "cancelled",
+      productId: 4,
+      createdAt: "",
+      updatedAt: "",
+    });
+
+    const result = await orderService.cancelOrder("1004");
+    expect(result.code).toBe("CANCELLATION_SUCCESS");
+    expect(repo.updateOrderStatus).not.toHaveBeenCalled();
   });
 });

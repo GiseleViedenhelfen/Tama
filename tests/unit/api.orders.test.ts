@@ -1,15 +1,21 @@
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createApp } from "../src/api/app.js";
-import * as orderService from "../src/api/services/order.service.js";
+import { createApp } from "../../src/api/app.js";
+import * as orderService from "../../src/api/services/order.service.js";
 
-vi.mock("../src/api/services/order.service.js");
+vi.mock("../../src/api/services/order.service.js");
 
-describe("orders API", () => {
+describe("orders API (HTTP layer)", () => {
   const app = createApp();
 
   beforeEach(() => {
     vi.resetAllMocks();
+  });
+
+  it("GET /health returns ok", async () => {
+    const res = await request(app).get("/health");
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("ok");
   });
 
   it("GET /orders/:id returns 200 when found", async () => {
@@ -29,6 +35,19 @@ describe("orders API", () => {
     const res = await request(app).get("/orders/1001");
     expect(res.status).toBe(200);
     expect(res.body.code).toBe("ORDER_FOUND");
+    expect(res.headers["x-request-id"]).toBeTruthy();
+  });
+
+  it("GET /orders/:id returns 404 when not found", async () => {
+    vi.mocked(orderService.getOrder).mockResolvedValue({
+      success: false,
+      code: "ORDER_NOT_FOUND",
+      message: "missing",
+    });
+
+    const res = await request(app).get("/orders/9999");
+    expect(res.status).toBe(404);
+    expect(res.body.code).toBe("ORDER_NOT_FOUND");
   });
 
   it("POST cancellation returns 409 when not cancellable", async () => {

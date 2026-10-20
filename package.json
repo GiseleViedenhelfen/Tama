@@ -14,8 +14,8 @@
     "migrate": "docker compose --profile tools run --rm db-setup",
     "db:setup": "npm run migrate",
     "chat": "tsx src/cli/chat.ts",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "vitest run tests/unit",
+    "test:watch": "vitest tests/unit"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
