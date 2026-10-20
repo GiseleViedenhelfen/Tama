@@ -6,6 +6,7 @@ import { createClassifierFromEnv } from "../agent/llm.js";
 import { MainApiClient } from "../agent/main-api-client.js";
 import { FakeStoreClient } from "../fakestore/client.js";
 import type { SessionState } from "../agent/types.js";
+import { withTypingIndicator } from "./loading.js";
 
 async function main(): Promise<void> {
   const mainApiUrl = process.env.MAIN_API_URL ?? "http://localhost:3000";
@@ -18,21 +19,23 @@ async function main(): Promise<void> {
     createClassifierFromEnv(),
   );
 
-  const session: SessionState = { pendingConfirmation: null };
+  const session: SessionState = {
+    pendingConfirmation: null,
+    lastOrderId: null,
+  };
   const rl = readline.createInterface({ input, output });
 
-  console.log("Tama — chat (mock de mensageria). Digite sair para encerrar.\n");
+  console.log("Tama — chat. Digite sair para encerrar.\n");
 
   while (true) {
     const line = await rl.question("Você: ");
     if (/^sair$/i.test(line.trim())) break;
 
-    const { reply, handoff } = await orchestrator.handleTurn(line, session);
-    console.log(`Tama: ${reply}`);
-    if (handoff) {
-      console.log("(handoff humano sugerido)");
-    }
-    console.log("");
+    const { reply } = await withTypingIndicator(() =>
+      orchestrator.handleTurn(line, session),
+    );
+
+    console.log(`Tama: ${reply}\n`);
   }
 
   rl.close();
