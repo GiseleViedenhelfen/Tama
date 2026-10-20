@@ -8,7 +8,12 @@ export function resolveDatabaseUrl(): string | undefined {
   const db = process.env.POSTGRES_DB?.trim() || "tama";
   const port = process.env.POSTGRES_PORT?.trim() || "5432";
 
-  if (!user || password === undefined || password === "") return undefined;
+  if (!user || password === undefined || password === "") {
+    if (process.env.RUN_INTEGRATION_TESTS === "1") {
+      return ciDefaultDatabaseUrl();
+    }
+    return undefined;
+  }
 
   const host = process.env.POSTGRES_HOST?.trim() || "localhost";
   const encodedUser = encodeURIComponent(user);
@@ -18,4 +23,12 @@ export function resolveDatabaseUrl(): string | undefined {
 
 export function integrationTestsEnabled(): boolean {
   return process.env.RUN_INTEGRATION_TESTS === "1" && !!resolveDatabaseUrl();
+}
+
+/** Ephemeral Postgres in GitHub Actions (trust auth, see tests.yml). */
+function ciDefaultDatabaseUrl(): string {
+  const host = process.env.POSTGRES_HOST?.trim() || "localhost";
+  const port = process.env.POSTGRES_PORT?.trim() || "5432";
+  const db = process.env.POSTGRES_DB?.trim() || "tama";
+  return `postgres://postgres@${host}:${port}/${db}`;
 }
