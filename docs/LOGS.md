@@ -49,9 +49,11 @@ A API usa **pino** (JSON). Campos sensíveis não são logados (`authorization`,
 
 ## Fake Store
 
+Chamadas feitas pelo agente CLI usam nível **debug** para não poluir o chat. Com `LOG_LEVEL=debug`:
+
 ```json
 {
-  "level": 30,
+  "level": 20,
   "service": "tama-api",
   "event": "external.fakestore.fetch",
   "productId": 1,
@@ -61,3 +63,5 @@ A API usa **pino** (JSON). Campos sensíveis não são logados (`authorization`,
   "msg": "external.fakestore.fetch"
 }
 ```
+
+Logs JSON vão para **stderr**; mensagens do chat ficam em **stdout**.

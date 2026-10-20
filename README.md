@@ -75,6 +75,8 @@ npm run chat
 
 (`MAIN_API_URL` e `OPENAI_API_KEY` no `.env`.)
 
+**Groq:** chave `gsk_...`, `OPENAI_BASE_URL=https://api.groq.com/openai/v1`, e um **model id da sua conta** (ex.: `openai/gpt-oss-20b`). Liste os disponíveis: `curl -s https://api.groq.com/openai/v1/models -H "Authorization: Bearer $OPENAI_API_KEY"`.
+
 ## Testes
 
 ```bash
