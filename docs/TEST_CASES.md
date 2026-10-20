@@ -1,6 +1,9 @@
 # Casos de teste
 
-Documentação obrigatória dos cenários relevantes (complementa testes automatizados em `tests/`).
+Documentação obrigatória dos cenários relevantes (complementa testes automatizados):
+
+- `tests/unit/` — serviço, HTTP (mock), agente (LLM/API mock), Fake Store (fetch mock), mensagens
+- `tests/integration/` — `supertest` + Postgres (`RUN_INTEGRATION_TESTS=1`, ver README)
 
 ## TC01 — Consulta de status com pedido válido
 

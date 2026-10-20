@@ -79,8 +79,22 @@ npm run chat
 
 ## Testes
 
+**Unitários** (rápidos, sem Postgres):
+
 ```bash
 npm test
+```
+
+**Integração** (API + Postgres real; suba o banco com `docker compose up -d postgres`, rode `npm run migrate`, e use `POSTGRES_*` no `.env` ou `DATABASE_URL` apontando para `localhost`):
+
+```bash
+npm run test:integration
+```
+
+Todos:
+
+```bash
+npm run test:all
 ```
 
 ## Endpoints principais
