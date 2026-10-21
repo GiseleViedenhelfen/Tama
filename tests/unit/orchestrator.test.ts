@@ -7,7 +7,10 @@ import type { SessionState } from "../../src/agent/types.js";
 import {
   REFUSAL_OUT_OF_SCOPE,
   REFUSAL_UNSAFE,
+  apiFailureReply,
+  cancelDeclinedReply,
   productComplement,
+  productUnavailableNote,
 } from "../../src/agent/messages.js";
 
 function mockClassifier(result: Awaited<ReturnType<LlmClassifier["classify"]>>): LlmClassifier {
@@ -117,6 +120,67 @@ describe("AgentOrchestrator guardrails", () => {
     expect(api.cancelOrder).toHaveBeenCalledWith("1001");
     expect(session.pendingConfirmation).toBeNull();
   });
+
+  it("does not call cancel API when client declines (TC09)", async () => {
+    const api = mockApi();
+    vi.mocked(api.getOrder).mockResolvedValue({
+      success: true,
+      code: "ORDER_FOUND",
+      message: "ok",
+      data: {
+        id: "1001",
+        status: "processing",
+        productId: 1,
+        createdAt: "",
+        updatedAt: "",
+      },
+    });
+
+    const orchestrator = new AgentOrchestrator(
+      api,
+      mockFakeStore(),
+      mockClassifier({
+        scope: "in_scope",
+        intent: "cancel_request",
+        orderId: "1001",
+        productQuery: null,
+      }),
+    );
+    const session = emptySession();
+    await orchestrator.handleTurn("Quero cancelar o 1001", session);
+    const result = await orchestrator.handleTurn("não", session);
+
+    expect(api.cancelOrder).not.toHaveBeenCalled();
+    expect(session.pendingConfirmation).toBeNull();
+    expect(result.reply).toBe(cancelDeclinedReply("1001"));
+  });
+
+  it("does not claim success when main API lookup fails (TC05)", async () => {
+    const api = mockApi();
+    vi.mocked(api.getOrder).mockResolvedValue({
+      success: false,
+      code: "INTERNAL_ERROR",
+      message: "Failed to retrieve order",
+    });
+
+    const orchestrator = new AgentOrchestrator(
+      api,
+      mockFakeStore(),
+      mockClassifier({
+        scope: "in_scope",
+        intent: "order_status",
+        orderId: "1001",
+        productQuery: null,
+      }),
+    );
+    const result = await orchestrator.handleTurn(
+      "status do pedido 1001",
+      emptySession(),
+    );
+
+    expect(result.reply).toBe(apiFailureReply());
+    expect(result.handoff).toBe(true);
+  });
 });
 
 describe("AgentOrchestrator session context", () => {
@@ -198,5 +262,41 @@ describe("AgentOrchestrator session context", () => {
       productComplement("Fjallraven Backpack", 109.95),
     );
     expect(session.lastOrderId).toBe("1001");
+  });
+
+  it("reports order status when Fake Store is unavailable (TC06)", async () => {
+    const api = mockApi();
+    const fakeStore = mockFakeStore();
+    vi.mocked(api.getOrder).mockResolvedValue({
+      success: true,
+      code: "ORDER_FOUND",
+      message: "ok",
+      data: {
+        id: "1001",
+        status: "processing",
+        productId: 1,
+        createdAt: "",
+        updatedAt: "",
+      },
+    });
+    vi.mocked(fakeStore.getProduct).mockResolvedValue(null);
+
+    const orchestrator = new AgentOrchestrator(
+      api,
+      fakeStore,
+      mockClassifier({
+        scope: "in_scope",
+        intent: "product_info",
+        orderId: "1001",
+        productQuery: null,
+      }),
+    );
+    const result = await orchestrator.handleTurn(
+      "qual produto do pedido 1001",
+      emptySession(),
+    );
+
+    expect(result.reply).toContain("em processamento");
+    expect(result.reply).toContain(productUnavailableNote());
   });
 });
