@@ -1,3 +1,5 @@
+import type { OrderStatus } from "../shared/order.types.js";
+
 export type Scope = "in_scope" | "out_of_scope" | "unsafe";
 
 export type Intent =
@@ -20,6 +22,7 @@ export interface Classification {
 export interface PendingConfirmation {
   orderId: string;
   action: "cancel";
+  officialStatus: OrderStatus;
 }
 
 export interface SessionState {

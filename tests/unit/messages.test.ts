@@ -17,7 +17,10 @@ describe("agent messages", () => {
     expect(orderStatusReply("1001", "processing")).toBe(
       "Pedido 1001 está em processamento.",
     );
-    expect(confirmCancelPrompt("1001")).toContain("1001");
+    expect(confirmCancelPrompt("1001", "processing")).toContain("1001");
+    expect(
+      confirmCancelPrompt("1001", "processing", "já foi enviado, cancela"),
+    ).toMatch(/em processamento/);
     expect(productComplement("Item", 10)).toContain("R$ 10.00");
     expect(deliveryEtaReply("1001", "shipped")).toMatch(/suporte humano/);
   });

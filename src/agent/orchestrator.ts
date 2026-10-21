@@ -29,6 +29,8 @@ const DELIVERY_QUESTION =
   /chega quando|quando chega|prazo de entrega|data de entrega|vai chegar|previs[aã]o|demora quanto/i;
 const CONTEXT_FRUSTRATION =
   /j[aá] (te )?(falei|disse)|eu disse|mesmo pedido|j[aá] informei/i;
+const CANCEL_REQUEST =
+  /\bcancel(a|ar|amento|o|e)?\b|desistir do pedido|n[aã]o quero mais|quero cancelar/i;
 
 function extractOrderId(text: string, fromLlm: string | null): string | null {
   if (fromLlm?.trim()) return fromLlm.trim();
@@ -100,6 +102,14 @@ export class AgentOrchestrator {
 
     const orderId = resolveOrderId(trimmed, classification.orderId, session);
 
+    if (
+      orderId &&
+      CANCEL_REQUEST.test(trimmed) &&
+      classification.intent !== "cancel_request"
+    ) {
+      return this.handleCancelRequest(orderId, session, trimmed);
+    }
+
     switch (classification.intent) {
       case "human_handoff":
         return { reply: HUMAN_HANDOFF, handoff: true };
@@ -119,7 +129,7 @@ export class AgentOrchestrator {
         }
         return this.handleOrderStatus(orderId, session);
       case "cancel_request":
-        return this.handleCancelRequest(orderId, session);
+        return this.handleCancelRequest(orderId, session, trimmed);
       case "product_info":
         return this.handleProductInfo(orderId, session);
       default:
@@ -181,7 +191,7 @@ export class AgentOrchestrator {
     }
 
     return {
-      reply: confirmCancelPrompt(pending.orderId),
+      reply: confirmCancelPrompt(pending.orderId, pending.officialStatus),
       handoff: false,
     };
   }
@@ -234,6 +244,7 @@ export class AgentOrchestrator {
   private async handleCancelRequest(
     orderId: string | null,
     session: SessionState,
+    clientMessage: string,
   ): Promise<AgentTurnResult> {
     if (!orderId) {
       return { reply: ASK_ORDER_ID, handoff: false };
@@ -256,8 +267,15 @@ export class AgentOrchestrator {
         };
       }
 
-      session.pendingConfirmation = { orderId, action: "cancel" };
-      return { reply: confirmCancelPrompt(orderId), handoff: false };
+      session.pendingConfirmation = {
+        orderId,
+        action: "cancel",
+        officialStatus: result.data.status,
+      };
+      return {
+        reply: confirmCancelPrompt(orderId, result.data.status, clientMessage),
+        handoff: false,
+      };
     } catch {
       return { reply: apiFailureReply(), handoff: true };
     }

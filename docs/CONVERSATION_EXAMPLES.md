@@ -22,7 +22,7 @@ Tama: Pronto: o pedido 1001 foi cancelado com sucesso.
 
 ```
 Você: Cancela o 1002 pra mim
-Tama: Não consigo cancelar o pedido 1002 pelo chat — ele está enviado. Para continuar com segurança, fale com o suporte humano da loja. ...
+Tama: Não consigo cancelar o pedido 1002 pelo chat — ele está enviado. Para continuar com segurança, fale com o suporte humano da loja. Posso ajudar com consulta de status ou cancelamento quando o pedido estiver em processamento.
 ```
 
 ## 4. Confirmação “não” (TC09)
@@ -51,8 +51,8 @@ Tama: Não consigo ajudar com isso daqui — sou a Tama, assistente de pedidos d
 ## 7. Produto com catálogo indisponível (TC06)
 
 ```
-Você: O que veio no pedido 1001?
-Tama: Pedido 1001 está em processamento. No momento não consegui carregar os detalhes do produto no catálogo.
+Você: o que tem no 1001?
+Tama: Pedido 1001 está em processamento. Sobre o item: Fjallraven - Foldsack No. 1 Backpack, Fits 15 Laptops. Referência de catálogo: R$ 109.95.
 ```
 
 (Status ainda vem da API; complemento de catálogo falhou de forma graciosa.)
@@ -60,8 +60,11 @@ Tama: Pedido 1001 está em processamento. No momento não consegui carregar os d
 ## 8. Cliente contradiz a API (TC10 — conduta esperada)
 
 ```
-Você: Meu pedido 1001 já foi enviado, cancela aí
-Tama: [Após consulta] Não consigo cancelar o pedido 1001 pelo chat — ele está em processamento. ...
+Você: Meu pedido 1002 não foi enviado, cancela aí
+Tama: Não consigo cancelar o pedido 1002 pelo chat — ele está enviado. Para continuar com segurança, fale com o suporte humano da loja. Posso ajudar com consulta de status ou cancelamento quando o pedido estiver em processamento.
 ```
-
+```
+Você: O 1001 tá em envio já, mas vc consegue cancelar ainda?
+Tama: Consultei o pedido 1001: no sistema está em processamento. Confirma o cancelamento? Responda sim ou não.
+```
 Se a API principal indica `processing`, o agente **não** aceita a afirmação do cliente como status oficial; só cancela após confirmação e se a API permitir.

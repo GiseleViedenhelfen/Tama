@@ -23,8 +23,28 @@ export const HUMAN_HANDOFF =
 export const ASK_ORDER_ID =
   "Qual é o número do pedido? Assim consigo consultar ou seguir com cancelamento.";
 
-export function confirmCancelPrompt(orderId: string): string {
-  return `Confirma o cancelamento do pedido ${orderId}? Responda sim ou não.`;
+/** Cliente afirma envio/entrega; a API principal prevalece (regra 8). */
+export function clientClaimsShippedOrDelivered(message: string): boolean {
+  return /\b(j[aá]\s*(foi\s*)?(enviado|entregue)|((foi|est[aá])\s*)?(enviado|entregue))\b/i.test(
+    message,
+  );
+}
+
+export function confirmCancelPrompt(
+  orderId: string,
+  officialStatus: OrderStatus,
+  clientMessage?: string,
+): string {
+  let reply = `Consultei o pedido ${orderId}: no sistema está ${statusLabel(officialStatus)}.`;
+  if (
+    clientMessage &&
+    clientClaimsShippedOrDelivered(clientMessage) &&
+    officialStatus === "processing"
+  ) {
+    reply +=
+      " Essa é a informação oficial — aqui ele ainda consta em processamento, não como enviado.";
+  }
+  return `${reply} Confirma o cancelamento? Responda sim ou não.`;
 }
 
 export function orderStatusReply(orderId: string, status: OrderStatus): string {

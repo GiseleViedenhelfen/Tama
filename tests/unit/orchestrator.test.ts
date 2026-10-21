@@ -114,6 +114,8 @@ describe("AgentOrchestrator guardrails", () => {
     const first = await orchestrator.handleTurn("Quero cancelar o 1001", session);
     expect(session.pendingConfirmation).not.toBeNull();
     expect(api.cancelOrder).not.toHaveBeenCalled();
+    expect(api.getOrder).toHaveBeenCalledWith("1001");
+    expect(first.reply).toMatch(/Consultei o pedido/);
     expect(first.reply).toMatch(/Confirma o cancelamento/i);
 
     await orchestrator.handleTurn("sim", session);
@@ -262,6 +264,76 @@ describe("AgentOrchestrator session context", () => {
       productComplement("Fjallraven Backpack", 109.95),
     );
     expect(session.lastOrderId).toBe("1001");
+  });
+
+  it("shows official status before confirm when client claims shipped (TC10)", async () => {
+    const api = mockApi();
+    vi.mocked(api.getOrder).mockResolvedValue({
+      success: true,
+      code: "ORDER_FOUND",
+      message: "ok",
+      data: {
+        id: "1001",
+        status: "processing",
+        productId: 1,
+        createdAt: "",
+        updatedAt: "",
+      },
+    });
+
+    const orchestrator = new AgentOrchestrator(
+      api,
+      mockFakeStore(),
+      mockClassifier({
+        scope: "in_scope",
+        intent: "cancel_request",
+        orderId: "1001",
+        productQuery: null,
+      }),
+    );
+    const result = await orchestrator.handleTurn(
+      "Meu pedido 1001 já foi enviado, cancela aí",
+      emptySession(),
+    );
+
+    expect(api.getOrder).toHaveBeenCalledWith("1001");
+    expect(result.reply).toMatch(/em processamento/);
+    expect(result.reply).toMatch(/informação oficial/);
+    expect(result.reply).toMatch(/Confirma o cancelamento/i);
+  });
+
+  it("uses cancel flow when LLM mislabels cancel as order_status", async () => {
+    const api = mockApi();
+    vi.mocked(api.getOrder).mockResolvedValue({
+      success: true,
+      code: "ORDER_FOUND",
+      message: "ok",
+      data: {
+        id: "1001",
+        status: "processing",
+        productId: 1,
+        createdAt: "",
+        updatedAt: "",
+      },
+    });
+
+    const orchestrator = new AgentOrchestrator(
+      api,
+      mockFakeStore(),
+      mockClassifier({
+        scope: "in_scope",
+        intent: "order_status",
+        orderId: "1001",
+        productQuery: null,
+      }),
+    );
+    const result = await orchestrator.handleTurn(
+      "pedido 1001 já enviado, cancela",
+      emptySession(),
+    );
+
+    expect(api.getOrder).toHaveBeenCalledWith("1001");
+    expect(result.reply).toMatch(/Confirma o cancelamento/i);
   });
 
   it("reports order status when Fake Store is unavailable (TC06)", async () => {
