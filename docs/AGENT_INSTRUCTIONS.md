@@ -245,5 +245,7 @@ O orquestrador **ignora** pedidos de ação se `scope !== "in_scope"`, exceto tr
 | Mensagens breves e naturais | Este doc §8 |
 | Modelo não substitui API/regras | Este doc §9 |
 | Prompt relevante | Este doc §10 |
+| Integração Fake Store (detalhe técnico) | `docs/FAKESTORE.md` |
+| Exemplos de conversa | `docs/CONVERSATION_EXAMPLES.md` |
 
-**Código** ainda será implementado; estes documentos definem o contrato de comportamento antes/durante a implementação.
+A implementação segue estes documentos: orquestrador (`src/agent/orchestrator.ts`), CLI (`src/cli/chat.ts`), API principal e cliente Fake Store.

@@ -10,7 +10,7 @@ Agente seguro de atendimento por mensagem (CLI mock) + API principal de pedidos 
 - **Fake Store:** complemento de produto; não define status/cancelamento.
 - **Autenticação do cliente:** não modelada (suposição: ID do pedido na mensagem).
 
-Documentação: `docs/BUSINESS_RULES.md`, `docs/AGENT_INSTRUCTIONS.md`, `docs/TEST_CASES.md`, `docs/PLANO_INICIAL.md`.
+Documentação: `docs/BUSINESS_RULES.md`, `docs/AGENT_INSTRUCTIONS.md`, `docs/FAKESTORE.md`, `docs/TEST_CASES.md`, `docs/CONVERSATION_EXAMPLES.md`, `docs/LOGS.md`, `docs/PLANO_INICIAL.md`.
 
 ## Configuração (`.env`)
 

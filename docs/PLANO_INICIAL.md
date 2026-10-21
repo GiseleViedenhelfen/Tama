@@ -464,17 +464,17 @@ Ajustar granularidade (mais commits se uma feat for grande); **nunca** juntar `f
 
 ## 15. Checklist de entregáveis (enunciado)
 
-- [ ] Código-fonte
-- [ ] Repositório GitHub (+ permissões se privado)
-- [ ] Instruções locais + Docker
-- [ ] OpenAPI/Swagger da API principal
+- [x] Código-fonte
+- [ ] Repositório GitHub (+ permissões se privado) — publicar e linkar no README
+- [x] Instruções locais + Docker — `README.md`
+- [x] OpenAPI/Swagger da API principal — `/docs`
 - [x] Documentação de regras (dúvidas + suposições + conduta) — `docs/BUSINESS_RULES.md`
 - [x] Instruções do agente + modelo OpenAI identificado — `docs/AGENT_INSTRUCTIONS.md`
-- [ ] Integração Fake Store explicada
-- [ ] Documentação de casos de teste
-- [ ] Testes automatizados e/ou exemplos de conversa
-- [ ] Decisões e limitações
-- [ ] Exemplos de logs estruturados
+- [x] Integração Fake Store explicada — `docs/FAKESTORE.md`
+- [x] Documentação de casos de teste — `docs/TEST_CASES.md`
+- [x] Testes automatizados e/ou exemplos de conversa — `tests/`, `docs/CONVERSATION_EXAMPLES.md`
+- [x] Decisões e limitações — `README.md`
+- [x] Exemplos de logs estruturados — `docs/LOGS.md`
 
 ---
 
