@@ -79,12 +79,12 @@ npm run chat
 
 ## Testes
 
-**CI (GitHub Actions):** workflow [`tests.yml`](.github/workflows/tests.yml) em push/PR em `main` ou `master` — `npm run build`, testes unitários e integração com Postgres.
+**CI (GitHub Actions):** workflow [`tests.yml`](.github/workflows/tests.yml) em push/PR em `main` — `npm run build`, testes unitários e integração com Postgres.
 
 Configure no repositório:
 
-1. **Settings → Environments → `test`** — *Environment protection rules* (ex.: só `main`/`master` ou revisores). O workflow não declara credenciais; o Postgres do job é efêmero (auth `trust`, só na rede do runner).
-2. **Settings → Branches** — proteja `main`/`master` e exija o check **Tests** antes do merge.
+1. **Settings → Environments → `test`** — *Environment protection rules* (ex.: só `main` ou revisores). O workflow não declara credenciais; o Postgres do job é efêmero (auth `trust`, só na rede do runner).
+2. **Settings → Branches** — proteja `main` e exija o check **Tests** antes do merge.
 
 **Unitários** (rápidos, sem Postgres):
 
